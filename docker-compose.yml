@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  ffmpeg:
+    image: linuxserver/ffmpeg:latest
+    container_name: ffmpeg
+    restart: unless-stopped
+    environment:
+      - RTSP_URL=rtsp://admin:admin@192.168.0.114:8554/Streaming/Channels/101
+    volumes:
+      - ./hls:/hls
+    command:
+      - ffmpeg
+      - -i
+      - ${RTSP_URL}
+      - -c:v
+      - h264
+      - -preset
+      - fast
+      - -b:v
+      - 1024k
+      - -c:a
+      - aac
+      - -b:a
+      - 128k
+      - -ar
+      - "44100"
+      - -f
+      - hls
+      - -hls_time
+      - "0.5"
+      - -hls_list_size
+      - "3"
+      - -hls_flags
+      - delete_segments
+      - -hls_playlist_type
+      - event
+      - /hls/stream.m3u8
+
+  hls-server:
+    build:
+      context: ./hls-server
+    container_name: hls-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./hls:/hls
+    restart: unless-stopped
+
+  nextjs:
+    build:
+      context: ./elgato-cam-web
+    container_name: nextjs
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
