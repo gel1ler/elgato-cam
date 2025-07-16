@@ -6,17 +6,18 @@ services:
     container_name: ffmpeg
     restart: unless-stopped
     environment:
-      - RTSP_URL=rtsp://admin:admin@192.168.0.114:8554/Streaming/Channels/101
+      - RTSP_URL=${RTSP_URL}
     volumes:
-      - ./hls:/hls
+      - ${PWD}/hls:/hls
     command:
-      - ffmpeg
       - -i
       - ${RTSP_URL}
       - -c:v
       - h264
       - -preset
-      - fast
+      - ultrafast  # Ускоряет кодирование
+      - -tune
+      - zerolatency  # Минимизация внутренней буферизации
       - -b:v
       - 1024k
       - -c:a
@@ -35,6 +36,12 @@ services:
       - delete_segments
       - -hls_playlist_type
       - event
+      - -flags
+      - low_delay
+      - -fflags
+      - nobuffer
+      - -vsync
+      - "0"
       - /hls/stream.m3u8
 
   hls-server:
